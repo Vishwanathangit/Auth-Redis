@@ -1,0 +1,72 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - FRONTEND_URL=http://localhost:5173
+      - MONGODB_URI=mongodb://mongo:27017/redis-auth
+      - JWT_SECRET=48b5b6bcc1eedbb237e30e71a24f8cd66dc8a9c0a67c973430fa7631551f24ee
+      - JWT_REFRESH_SECRET=5fc4c9e4f51d4edb16ce9fe9c1eec31195d975876dee6332c181afca3cd9017d
+      - JWT_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:5
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - redis-data:/data
+
+  redis-core:
+    image: redis:7
+    container_name: redis-core
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-core-data:/data
+
+volumes:
+  mongo-data:
+  redis-data:
+  redis-core-data:
